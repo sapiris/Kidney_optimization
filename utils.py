@@ -37,7 +37,7 @@ def calc_match(don_alleles, pat_alleles, loci_list):
                 alleles_pat = alleles_pair_pat.split("+")
                 match = 0
                 for allele in alleles_don:
-                    if allele not in alleles_pat:#if allele in alleles_pat:
+                   if allele in alleles_pat:# if allele not in alleles_pat:#
                         match += 1
                 if match > 0:
                     match_sum = match_sum + match * freq_pair_don * freq_pair_pat
@@ -57,12 +57,13 @@ def parse_data(transplantation_file_path,  donor_type, year = 1900):
     dict_don, dict_pat, pat_order_dict, don_order_dict  = {}, {}, {}, {}
     set_pairs = set()
     dict_id_alleles = {}
-    data_file = pd.read_csv( transplantation_file_path, header=0) #"../belinson/HLA_2.xlsx"
+    data_file = pd.read_csv( transplantation_file_path, header=0)
+    data_file["Date"] = pd.to_datetime(data_file['Date'], format="%m/%d/%Y")  # M/D/Y
     for row in data_file.iterrows():
         row = row[1]
         id_line = row["SN"]
-        if (donor_type == "altro" and row["Donor type"] == "LURD") or (
-                donor_type == "dead" and row["Donor type"] == "DDRT") or (donor_type == "altro+dead" and
+        if (donor_type == "LRD" and row["Donor type"] == "LURD") or (
+                donor_type == "DDRT" and row["Donor type"] == "DDRT") or (donor_type == "LRD+DDRT" and
                                                                                   row["Donor type"] in ["LURD", "DDRT"]):
             if row["Cross"] == "Negative":  # remove crossover transplants
                 if row["Sensitive"] == "No":# 0 == row["Previous transplants"]:  # Leave only the first transplant to remove patients with antibodies. is_nan(row["Previous transplants"]) or
@@ -70,8 +71,8 @@ def parse_data(transplantation_file_path,  donor_type, year = 1900):
                         if row["blood type recipient"] in blood_2_blood[row["blood type donor"]]:
                             if legal_age(row["age donor"],  row["age recipient"]):
                             #if f"{id_line}_pat" in dict_id_muugs and f"{id_line}_don" in dict_id_muugs: #leave only patients with imputed HLA
-                                date_format = '%Y-%m-%d'
-                                date_obj = datetime.strptime(row["Date"], date_format)
+                                date_format = '%m/%d/%y'
+                                date_obj = row["Date"]# datetime.strptime(row["Date"], date_format)
                                 if date_obj.year >= year:
                                     set_pairs.add((f"{id_line}_pat", f"{id_line}_don"))
                                     pat_order_dict[str(f"{id_line}_pat")] = date_obj
