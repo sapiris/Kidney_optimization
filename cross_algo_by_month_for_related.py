@@ -46,7 +46,7 @@ def create_graph_match(loci_list, data_file_name, year, list_donor_type):
 
     dict_date_group = {}
     group = 0
-    for year in range(year, 2023):#[2020,2021,2022]:
+    for year in range(year, 2030):#[2020,2021,2022]:
         for month in [1,5,9]:
             group += 1
             for i in range(4):
@@ -54,6 +54,7 @@ def create_graph_match(loci_list, data_file_name, year, list_donor_type):
 
     graph = nx.DiGraph()
     sum_weight_match = 0
+    data_file["Date"] = pd.to_datetime(data_file['Date'], format="%m/%d/%Y")  # M/D/Y
     for row in data_file.iterrows():
         row = row[1]
         id_line = row["SN"]
@@ -62,8 +63,8 @@ def create_graph_match(loci_list, data_file_name, year, list_donor_type):
                 if not is_nan(row["blood type donor"]):
                     if row["blood type recipient"] in blood_2_blood[row["blood type donor"]]:
                         #if f"{id_line}_pat" in dict_id_muugs and f"{id_line}_don" in dict_id_muugs:
-                            date_format = '%Y-%m-%d'
-                            date_obj = datetime.strptime(row["Date"], date_format)
+                            #date_format = '%Y-%m-%d'
+                            date_obj = row["Date"]#datetime.strptime(row["Date"], date_format)
                             if (date_obj.month, date_obj.year ) in dict_date_group:# and dict_date_group[(row["Date"].month, row["Date"].year )] > 1 :
 
                                 dict_alleles_pat, dict_alleles_don = {"A": {}, "B": {}, "DRB1": {}}, {"A": {}, "B": {},
@@ -74,9 +75,9 @@ def create_graph_match(loci_list, data_file_name, year, list_donor_type):
                                 dict_id_alleles[f"{id_line}_pat"] = dict_alleles_pat
                                 dict_id_alleles[f"{id_line}_don"] = dict_alleles_don
                                 match_weight = calc_match(dict_alleles_don, dict_alleles_pat, loci_list)
-                                sum_weight_match += (6 - match_weight)
-                                #if match_weight == 0:
-                                #   match_weight = 0.01
+                                sum_weight_match += match_weight#(6 - match_weight)
+                                if match_weight == 0:
+                                   match_weight = 0.00001
                                 graph.add_node(id_line, pat_blood=row["blood type recipient"], don_blood=row["blood type donor"],
                                                pat_age=row["age recipient"], don_age=row["age donor"], group_date = dict_date_group[(date_obj.month, date_obj.year )])
                                 #match_weight = match_weight if match_weight > 0 else 0.000001
@@ -161,8 +162,8 @@ if __name__ == '__main__':
         os.makedirs("output")
     f_out = open("output/related.csv", "w")  #
     transplants_file_path = "input_transplants.csv"
-    year = 2010
-    for dnrtypy in [["LRD"], ["LURD"], ["LRD", "LURD"]]:
+    year = 1900
+    for dnrtypy in [["LRD"]]:#,  ["LRD", "LURD"]]:#["LURD"],
         for loci_list in [ ["A", "B","DRB1" ]]: #
             for k in [2,3,4,5,8]:
                 graph_matching, sum_weights, num_pairs = create_graph_match(loci_list, transplants_file_path,  year, dnrtypy)
@@ -217,8 +218,8 @@ if __name__ == '__main__':
                 #print(f"{('_').join(loci_list)} & {k} & {round( sum_weights, 2)} &{round(res_value/len(graph_matching.nodes()), 2)} & {round(all_w_orig/sum_a,2)} & {round( all_w_cycle/sum_a, 2)} & {dict_size} & {sum_all}\\\\ ")
                 num_alleles = 2 * len(loci_list)
                 if sum_a == 0:
-                    f_out.write(f"{'_'.join(dnrtypy)}  & {('_').join(loci_list)} & {k} & {num_alleles - round(sum_weights, 2)} &{num_alleles - (round(res_value / len(graph_matching.nodes()), 2))} & -- & -- & {dict_size}  & {num_pairs}\\\\ \n")
+                    f_out.write(f"{'_'.join(dnrtypy)}  & {('_').join(loci_list)} & {k} & {round(sum_weights, 2)} &{ (round(res_value / len(graph_matching.nodes()), 2))} & -- & -- & {dict_size}  & {num_pairs}\\\\ \n")
                 else:
-                    f_out.write(f"{'_'.join(dnrtypy)} & {('_').join(loci_list)} & {k} & { round(num_alleles - sum_weights, 2)} &{ (round(num_alleles - (res_value / len(graph_matching.nodes())), 2))} & "
-                                f"{(round(num_alleles - (all_w_orig / sum_a), 2))} & {(round(num_alleles - (all_w_cycle / sum_a), 2))} & {dict_size}  & {num_pairs}\\\\ \n")
+                    f_out.write(f"{'_'.join(dnrtypy)} & {('_').join(loci_list)} & {k} & { round( sum_weights, 2)} &{ (round((res_value / len(graph_matching.nodes())), 2))} & "
+                                f"{(round( (all_w_orig / sum_a), 2))} & {(round( (all_w_cycle / sum_a), 2))} & {dict_size}  & {num_pairs}\\\\ \n")
 
